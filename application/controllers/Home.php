@@ -15,7 +15,8 @@ class Home extends CI_Controller
 	public function __construct()
 	{
 		parent::__construct();
-
+		$this->load->library('form_validation');
+		$this->load->library('session');
 		$this->load->model('Data_model');
 	}
 
@@ -104,5 +105,79 @@ class Home extends CI_Controller
 		// echo "Genre" . $dt->genre . "<br>";
 		// echo "Contact" . $dt->contact_band . "<br>";
 
+	}
+
+
+	public function add_data()
+	{
+		$this->load->view('add_data');
+	}
+
+	public function simpan_data()
+	{
+		$this->form_validation->set_rules('nama_band', 'Nama Band', 'required|trim');
+		$this->form_validation->set_rules('genre', 'Genre Band', 'required|trim');
+		$this->form_validation->set_rules('contact_band', 'Contact Band', 'required|trim');
+
+		if ($this->form_validation->run() == FALSE) {
+			$this->load->view('add_data');
+		} else {
+			$data = [
+				'nama_band'    => htmlspecialchars($this->input->post('nama_band', TRUE)),
+				'genre'        => htmlspecialchars($this->input->post('genre', TRUE)),
+				'contact_band' => htmlspecialchars($this->input->post('contact_band', TRUE))
+			];
+
+			$input = "<script>alert('XSS');</script>";
+			echo $input;
+
+			if ($this->db->insert('band', $data)) {
+				$this->session->set_flashdata('success', 'Data berhasil disimpan!');
+				redirect('Home/add_data');
+			} else {
+				$this->session->set_flashdata('error', 'Gagal menyimpan data.');
+				$this->load->view('add_data');
+			}
+		}
+	}
+
+
+	public function add_data_versi_ajax()
+	{
+		$this->load->view('add_data_versi_ajax');
+	}
+
+	public function simpan_data_ajax()
+	{
+		$this->load->library('form_validation');
+		$this->form_validation->set_rules('nama_band', 'Nama Band', 'required|trim');
+		$this->form_validation->set_rules('genre', 'Genre Band', 'required|trim');
+		$this->form_validation->set_rules('contact_band', 'Contact Band', 'required|trim');
+
+		if ($this->form_validation->run() == FALSE) {
+			echo json_encode([
+				'status' => 'validation_error',
+				'message' => validation_errors()
+			]);
+			return;
+		}
+
+		$data = [
+			'nama_band'    => htmlspecialchars($this->input->post('nama_band', TRUE)),
+			'genre'        => htmlspecialchars($this->input->post('genre', TRUE)),
+			'contact_band' => htmlspecialchars($this->input->post('contact_band', TRUE))
+		];
+
+		if ($this->db->insert('band', $data)) {
+			echo json_encode([
+				'status' => 'success',
+				'message' => 'Data berhasil disimpan!'
+			]);
+		} else {
+			echo json_encode([
+				'status' => 'error',
+				'message' => 'Gagal menyimpan data.'
+			]);
+		}
 	}
 }
